@@ -14,11 +14,16 @@ jobs:
       id: read-inputs
       run: |
         echo "received event"
-        echo "::set-output name=commit::$(jq -r .client_payload.commit ${{ github.event_path }})"
-        echo "::set-output name=pathmap::$(jq -r .client_payload.pathmap ${{ github.event_path }})"
+        echo "::set-env name=commit::$(jq -r .client_payload.commit ${{ github.event_path }})"
+        echo "::set-env name=srcpath::$(jq -r .client_payload.srcpath ${{ github.event_path }})"
+        echo "::set-env name=destpath::$(jq -r .client_payload.destpath ${{ github.event_path }})"
+        # echo "::set-output srcrepopath::$(jq -r '.client_payload.pathmap | keys[]' ${{ github.event_path }})"
+        # echo "::set-output dstrepopath::$(jq -r '.client_payload.pathmap | keys[] as $k | (.[$k])' ${{ github.event_path }})"
 
     - run: |
-        echo "commit: ${{ steps.read-inputs.outputs.commit }}, pathmap: ${{ steps.read-inputs.outputs.pathmap}}"
+        echo "commit: ${{ steps.read-inputs.outputs.commit }}"
+        echo "srcpath: ${{ steps.read-inputs.outputs.srcpath }}"
+        echo "dstpath: ${{ steps.read-inputs.outputs.dstpath }}"
 
     # - name: Parse ID and Version
     #   id: dependency

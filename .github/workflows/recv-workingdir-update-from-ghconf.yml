@@ -35,7 +35,7 @@ jobs:
       id: pr-branch
       run: |
         echo "pwd is $(pwd)"
-        cd "${{ github.workspace }}"/dst-repo
+        echo "github workspace: ${{ github.workspace }}"
         BRANCH_NAME="github-config-$(git rev-parse HEAD | head -c7)"
         git -C dst-repo checkout -b "$BRANCH_NAME"
         echo "::set-output name=branch::$BRANCH_NAME"

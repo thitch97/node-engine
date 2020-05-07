@@ -7,7 +7,7 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-    name: Update buildpack.toml
+    name: Update github config
     steps:
 
     - name: parse inputs
@@ -17,49 +17,47 @@ jobs:
         echo "::set-output name=srcpath::$(jq -r .client_payload.srcpath ${{ github.event_path }})"
         echo "::set-output name=dstpath::$(jq -r .client_payload.dstpath ${{ github.event_path }})"
 
-		# checkout github-config @$commit
-		- name: Checkout tools repo
-			uses: actions/checkout@v2
-			with:
-				repository: thitch97/github-config
-				ref: "${{ steps.read-inputs.outputs.commit }}"
-				path: src-repo
+    # checkout github-config @$commit
+    - name: Checkout github-config repo
+      uses: actions/checkout@v2
+      with:
+        repository: thitch97/github-config
+        ref: "${{ steps.read-inputs.outputs.commit }}"
+        path: src-repo
 
-		# checkout the dst-repo
-		- name: Checkout
-			uses: actions/checkout@v2
-			with:
-				path: dst-repo
+    # checkout the dst-repo
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        path: dst-repo
 
     - name: Checkout PR Branch
-			id: pr-branch
+      id: pr-branch
       run: |
-				BRANCH_NAME="github-config-$(git -C nodejs rev-parse HEAD | head -c7)"
+        BRANCH_NAME="github-config-$(git -C nodejs rev-parse HEAD | head -c7)"
         git -C dst-repo checkout -b "$BRANCH_NAME"
         echo "::set-output name=branch::$BRANCH_NAME"
 
-		- name: copy stuff
-		- run: |
-				echo "pwd is $(pwd)"
-				cd "${{ github.workspace }}"
-				cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
+    - name: copy stuff
+    - run: |
+        echo "pwd is $(pwd)"
+        cd "${{ github.workspace }}"
+        cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
 
     - name: Commit
       run: |
-				echo "pwd is $(pwd)"
-				cd "${{ github.workspace }}"/dst-repo
+        echo "pwd is $(pwd)"
+        cd "${{ github.workspace }}"/dst-repo
         git config --global user.email "paketobuildpacks@paketo.io"
         git config --global user.name "paketo-bot"
-				git add ".${{ steps.read-inputs.outputs.dstpath }}"
-        git commit \
-          --message "Updating stuff"
+        git add ".${{ steps.read-inputs.outputs.dstpath }}"
+        git commit --message "Updating stuff"
 
     - name: Push Branch
       run: |
-				echo "pwd is $(pwd)"
-				cd "${{ github.workspace }}"/dst-repo
-        git push \
-          --set-upstream origin "${{ steps.pr-branch.outputs.branch }}"
+        echo "pwd is $(pwd)"
+        cd "${{ github.workspace }}"/dst-repo
+        git push --set-upstream origin "${{ steps.pr-branch.outputs.branch }}"
 
     - name: Open Pull Request
       run: |

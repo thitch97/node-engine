@@ -42,7 +42,8 @@ jobs:
 
     - name: copy stuff
       run: |
-        cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}/**" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
+        command -v tree && tree -L 2
+        cp -a "src-repo${{ steps.read-inputs.outputs.srcpath }}/." "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
 
     - name: Commit and Push
       run: |

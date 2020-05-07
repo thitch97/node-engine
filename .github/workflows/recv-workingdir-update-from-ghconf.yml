@@ -34,32 +34,25 @@ jobs:
     - name: Checkout PR Branch
       id: pr-branch
       run: |
-        echo "pwd is $(pwd)"
-        echo "github workspace: ${{ github.workspace }}"
+        pushd dst-repo
         BRANCH_NAME="github-config-$(git rev-parse HEAD | head -c7)"
-        git -C dst-repo checkout -b "$BRANCH_NAME"
+        git checkout -b "$BRANCH_NAME"
         echo "::set-output name=branch::$BRANCH_NAME"
+        popd
 
     - name: copy stuff
       run: |
-        echo "pwd is $(pwd)"
-        cd "${{ github.workspace }}"
         cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}/**" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
 
-    - name: Commit
+    - name: Commit and Push
       run: |
-        echo "pwd is $(pwd)"
-        cd "${{ github.workspace }}"/dst-repo
+        pushd dst-repo
         git config --global user.email "paketobuildpacks@paketo.io"
         git config --global user.name "paketo-bot"
         git add ".${{ steps.read-inputs.outputs.dstpath }}"
         git commit --message "Updating stuff"
-
-    - name: Push Branch
-      run: |
-        echo "pwd is $(pwd)"
-        cd "${{ github.workspace }}"/dst-repo
         git push --set-upstream origin "${{ steps.pr-branch.outputs.branch }}"
+        popd
 
     - name: Open Pull Request
       run: |

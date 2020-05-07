@@ -39,7 +39,7 @@ jobs:
         echo "::set-output name=branch::$BRANCH_NAME"
 
     - name: copy stuff
-    - run: |
+      run: |
         echo "pwd is $(pwd)"
         cd "${{ github.workspace }}"
         cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"

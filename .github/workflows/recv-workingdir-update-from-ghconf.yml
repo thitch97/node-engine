@@ -13,57 +13,62 @@ jobs:
     - name: parse inputs
       id: read-inputs
       run: |
-        echo "received event"
-        echo "::set-env name=commit::$(jq -r .client_payload.commit ${{ github.event_path }})"
-        echo "::set-env name=srcpath::$(jq -r .client_payload.srcpath ${{ github.event_path }})"
-        echo "::set-env name=dstpath::$(jq -r .client_payload.dstpath ${{ github.event_path }})"
-        # echo "::set-output srcrepopath::$(jq -r '.client_payload.pathmap | keys[]' ${{ github.event_path }})"
-        # echo "::set-output dstrepopath::$(jq -r '.client_payload.pathmap | keys[] as $k | (.[$k])' ${{ github.event_path }})"
+        echo "::set-output name=commit::$(jq -r .client_payload.commit ${{ github.event_path }})"
+        echo "::set-output name=srcpath::$(jq -r .client_payload.srcpath ${{ github.event_path }})"
+        echo "::set-output name=dstpath::$(jq -r .client_payload.dstpath ${{ github.event_path }})"
 
-    - run: |
-        echo "commit: ${{ steps.read-inputs.outputs.commit }}"
-        echo "srcpath: ${{ steps.read-inputs.outputs.srcpath }}"
-        echo "dstpath: ${{ steps.read-inputs.outputs.dstpath }}"
+		# checkout github-config @$commit
+		- name: Checkout tools repo
+			uses: actions/checkout@v2
+			with:
+				repository: thitch97/github-config
+				ref: "${{ steps.read-inputs.outputs.commit }}"
+				path: src-repo
 
-    # - name: Parse ID and Version
-    #   id: dependency
-    #   run: |
-    #     echo "::set-output name=id::$(jq -r .client_payload.dependency.id ${{ github.event_path }})"
-    #     echo "::set-output name=version::$(jq -r .client_payload.dependency.version ${{ github.event_path }})"
-    #
-    # - name: Checkout
-    #   uses: actions/checkout@v2
-    #
-    # - name: Checkout Branch
-    #   run: |
-    #     git checkout \
-    #       -b "dependency-update/${{ steps.dependency.outputs.id }}/${{ steps.dependency.outputs.version }}"
-    #
-    # - name: Update buildpack.toml
-    #   uses: paketo-buildpacks/github-config/actions/dependency/update@receive-dependency-update
-    #
-    # - name: Commit
-    #   run: |
-    #     git config --global user.email "paketobuildpacks@gmail.com"
-    #     git config --global user.name "paketo-bot"
-    #     git commit \
-    #       --all \
-    #       --message "Updating ${{ steps.dependency.outputs.id }} to ${{ steps.dependency.outputs.version }} in buildpack.toml"
-    #
-    # - name: Push Branch
-    #   run: |
-    #     git push \
-    #       --set-upstream origin "dependency-update/${{ steps.dependency.outputs.id }}/${{ steps.dependency.outputs.version }}"
-    #
-    # - name: Open Pull Request
-    #   run: |
-    #     curl "https://api.github.com/repos/${{ github.repository}}/pulls" \
-    #       -H "Authorization: token ${{ github.token }}" \
-    #       -X POST \
-    #       --data '{
-    #         "head": "dependency-update/${{ steps.dependency.outputs.id }}/${{ steps.dependency.outputs.version }}",
-    #         "base": "master",
-    #         "title": "Update ${{ steps.dependency.outputs.id }}",
-    #         "body": "Updates ${{ steps.dependency.outputs.id }} to ${{ steps.dependency.outputs.version }}"
-    #       }'
-    #
+		# checkout the dst-repo
+		- name: Checkout
+			uses: actions/checkout@v2
+			with:
+				path: dst-repo
+
+    - name: Checkout PR Branch
+			id: pr-branch
+      run: |
+				BRANCH_NAME="github-config-$(git -C nodejs rev-parse HEAD | head -c7)"
+        git -C dst-repo checkout -b "$BRANCH_NAME"
+        echo "::set-output name=branch::$BRANCH_NAME"
+
+		- name: copy stuff
+		- run: |
+				echo "pwd is $(pwd)"
+				cd "${{ github.workspace }}"
+				cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
+
+    - name: Commit
+      run: |
+				echo "pwd is $(pwd)"
+				cd "${{ github.workspace }}"/dst-repo
+        git config --global user.email "paketobuildpacks@paketo.io"
+        git config --global user.name "paketo-bot"
+				git add ".${{ steps.read-inputs.outputs.dstpath }}"
+        git commit \
+          --message "Updating stuff"
+
+    - name: Push Branch
+      run: |
+				echo "pwd is $(pwd)"
+				cd "${{ github.workspace }}"/dst-repo
+        git push \
+          --set-upstream origin "${{ steps.pr-branch.outputs.branch }}"
+
+    - name: Open Pull Request
+      run: |
+        curl "https://api.github.com/repos/${{ github.repository }}/pulls" \
+          -H "Authorization: token ${{ github.token }}" \
+          -X POST \
+          --data '{
+            "head": "${{ steps.pr-branch.outputs.branch }}",
+            "base": "master",
+            "title": "Update stuff",
+            "body": "Updates stuff from github-config"
+          }'

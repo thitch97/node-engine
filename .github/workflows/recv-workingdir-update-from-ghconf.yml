@@ -44,7 +44,7 @@ jobs:
       run: |
         echo "pwd is $(pwd)"
         cd "${{ github.workspace }}"
-        cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
+        cp -rf "src-repo${{ steps.read-inputs.outputs.srcpath }}/**" "dst-repo${{ steps.read-inputs.outputs.dstpath }}"
 
     - name: Commit
       run: |

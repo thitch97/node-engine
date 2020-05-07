@@ -5,15 +5,20 @@ on:
     types: working-dir-update
 
 jobs:
-  update-buildpack-toml:
+  update:
     runs-on: ubuntu-latest
     name: Update buildpack.toml
     steps:
 
-    - name: Temp print
+    - name: parse inputs
+      id: read-inputs
       run: |
         echo "received event"
-        echo "${{ github.event.client_payload }}"
+        echo "::set-output name=commit::$(jq -r .client_payload.commit ${{ github.event_path }})"
+        echo "::set-output name=pathmap::$(jq -r .client_payload.pathmap ${{ github.event_path }})"
+
+    - run: |
+        echo "commit: ${{ steps.read-inputs.outputs.commit }}, pathmap: ${{ steps.read-inputs.outputs.pathmap}}"
 
     # - name: Parse ID and Version
     #   id: dependency
